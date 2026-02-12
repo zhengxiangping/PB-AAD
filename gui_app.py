@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-AGP-Traffic 3D 可视化软件
-交通预测数据三维可视化界面
-"""
+
 import sys
 import os
 import numpy as np
@@ -23,7 +20,6 @@ import matplotlib.cm as cm
 
 
 class TrafficCanvas3D(FigureCanvas):
-    """3D 交通数据可视化画布"""
     
     def __init__(self, parent=None, width=8, height=6, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
@@ -31,7 +27,6 @@ class TrafficCanvas3D(FigureCanvas):
         super(TrafficCanvas3D, self).__init__(self.fig)
         self.setParent(parent)
         
-        # 设置初始视图
         self.ax.set_xlabel('X (Nodes)', fontsize=10)
         self.ax.set_ylabel('Y (Nodes)', fontsize=10)
         self.ax.set_zlabel('Traffic Flow', fontsize=10)
@@ -40,20 +35,17 @@ class TrafficCanvas3D(FigureCanvas):
         self.data = None
         
     def plot_traffic_data(self, data, time_step=0):
-        """绘制交通数据的 3D 柱状图"""
         self.ax.clear()
         
         if data is None:
             return
-            
-        # 获取数据维度
+      
         if len(data.shape) == 3:
             # (time, nodes, features)
             traffic_flow = data[time_step, :, 0]
         else:
             traffic_flow = data
-        
-        # 创建网格
+
         num_nodes = len(traffic_flow)
         grid_size = int(np.ceil(np.sqrt(num_nodes)))
         
@@ -71,10 +63,10 @@ class TrafficCanvas3D(FigureCanvas):
         
         dz = traffic_flow
         
-        # 根据流量设置颜色
+
         colors = cm.viridis(traffic_flow / traffic_flow.max())
         
-        # 绘制 3D 柱状图
+
         self.ax.bar3d(x_data, y_data, z_data, dx, dy, dz, 
                      color=colors, shade=True, alpha=0.8)
         
@@ -86,13 +78,11 @@ class TrafficCanvas3D(FigureCanvas):
         self.draw()
     
     def plot_heatmap_3d(self, data, elevation=0.5):
-        """绘制 3D 热力图"""
         self.ax.clear()
         
         if data is None:
             return
         
-        # 创建网格数据
         num_nodes = data.shape[0]
         grid_size = int(np.ceil(np.sqrt(num_nodes)))
         
@@ -105,7 +95,6 @@ class TrafficCanvas3D(FigureCanvas):
         
         X, Y = np.meshgrid(range(grid_size), range(grid_size))
         
-        # 绘制表面
         surf = self.ax.plot_surface(X, Y, Z, cmap='coolwarm', 
                                     alpha=0.8, edgecolor='none')
         
@@ -120,7 +109,6 @@ class TrafficCanvas3D(FigureCanvas):
 
 
 class MainWindow(QMainWindow):
-    """主窗口"""
     
     def __init__(self):
         super().__init__()
@@ -129,63 +117,47 @@ class MainWindow(QMainWindow):
         self.init_ui()
         
     def init_ui(self):
-        """初始化用户界面"""
         self.setWindowTitle('AGP-Traffic 3D Visualization System')
         self.setGeometry(100, 100, 1400, 900)
         
-        # 创建中心部件
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        
-        # 创建主布局
+
         main_layout = QHBoxLayout(central_widget)
-        
-        # 创建分割器
+      
         splitter = QSplitter(Qt.Horizontal)
         
-        # === 左侧控制面板 ===
         left_panel = self.create_control_panel()
         splitter.addWidget(left_panel)
-        
-        # === 中间 3D 可视化区域 ===
+      
         center_widget = QWidget()
         center_layout = QVBoxLayout(center_widget)
         
-        # 3D 画布
         self.canvas = TrafficCanvas3D(self, width=8, height=6)
         center_layout.addWidget(self.canvas)
         
-        # 时间轴控制
         time_control = self.create_time_control()
         center_layout.addWidget(time_control)
         
         splitter.addWidget(center_widget)
-        
-        # === 右侧日志面板 ===
+      
         right_panel = self.create_log_panel()
         splitter.addWidget(right_panel)
-        
-        # 设置分割器比例
+      
         splitter.setSizes([300, 800, 300])
         
         main_layout.addWidget(splitter)
         
-        # 加载示例数据
         self.load_sample_data()
         
     def create_control_panel(self):
-        """创建左侧控制面板"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
         
-        # 标题
+
         title = QLabel('Control Panel')
         title.setFont(QFont('Arial', 14, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
-        
-        # 数据加载组
-        data_group = QGroupBox('Data Loading')
+          data_group = QGroupBox('Data Loading')
         data_layout = QVBoxLayout()
         
         btn_load = QPushButton('Load Data File')
@@ -199,7 +171,6 @@ class MainWindow(QMainWindow):
         data_group.setLayout(data_layout)
         layout.addWidget(data_group)
         
-        # 可视化设置组
         vis_group = QGroupBox('Visualization Settings')
         vis_layout = QGridLayout()
         
@@ -224,7 +195,7 @@ class MainWindow(QMainWindow):
         vis_group.setLayout(vis_layout)
         layout.addWidget(vis_group)
         
-        # 数据分析组
+  
         analysis_group = QGroupBox('Data Analysis')
         analysis_layout = QVBoxLayout()
         
@@ -243,7 +214,7 @@ class MainWindow(QMainWindow):
         analysis_group.setLayout(analysis_layout)
         layout.addWidget(analysis_group)
         
-        # 统计信息
+   
         stats_group = QGroupBox('Statistics')
         stats_layout = QVBoxLayout()
         
@@ -259,67 +230,7 @@ class MainWindow(QMainWindow):
         
         return panel
     
-    def create_time_control(self):
-        """创建时间轴控制"""
-        widget = QWidget()
-        layout = QHBoxLayout(widget)
-        
-        # 播放控制
-        self.btn_play = QPushButton('▶ Play')
-        self.btn_play.clicked.connect(self.toggle_play)
-        layout.addWidget(self.btn_play)
-        
-        btn_prev = QPushButton('◀ Previous')
-        btn_prev.clicked.connect(self.prev_time_step)
-        layout.addWidget(btn_prev)
-        
-        btn_next = QPushButton('Next ▶')
-        btn_next.clicked.connect(self.next_time_step)
-        layout.addWidget(btn_next)
-        
-        # 时间步滑块
-        layout.addWidget(QLabel('Time Step:'))
-        self.slider_time = QSlider(Qt.Horizontal)
-        self.slider_time.setRange(0, 100)
-        self.slider_time.setValue(0)
-        self.slider_time.valueChanged.connect(self.on_time_change)
-        layout.addWidget(self.slider_time)
-        
-        self.label_time = QLabel('0 / 100')
-        layout.addWidget(self.label_time)
-        
-        # 动画定时器
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.animate_step)
-        self.is_playing = False
-        
-        return widget
-    
-    def create_log_panel(self):
-        """创建右侧日志面板"""
-        panel = QWidget()
-        layout = QVBoxLayout(panel)
-        
-        title = QLabel('Console Output')
-        title.setFont(QFont('Arial', 14, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
-        
-        self.text_log = QTextEdit()
-        self.text_log.setReadOnly(True)
-        self.text_log.setFont(QFont('Courier', 9))
-        layout.addWidget(self.text_log)
-        
-        btn_clear = QPushButton('Clear Log')
-        btn_clear.clicked.connect(self.text_log.clear)
-        layout.addWidget(btn_clear)
-        
-        return panel
-    
-    def log(self, message):
-        """添加日志"""
-        self.text_log.append(f"> {message}")
-    
+ 
     def load_sample_data(self):
         """加载示例数据"""
         try:
@@ -365,36 +276,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.log(f"✗ Error loading file: {e}")
     
-    def update_visualization(self):
-        """更新可视化"""
-        if self.data is None:
-            return
-        
-        vis_type = self.combo_vis_type.currentText()
-        time_step = self.slider_time.value()
-        
-        if vis_type == '3D Bar Chart':
-            self.canvas.plot_traffic_data(self.data, time_step)
-        elif vis_type == '3D Heatmap' or vis_type == '3D Surface':
-            if len(self.data.shape) == 3:
-                self.canvas.plot_heatmap_3d(self.data[time_step, :, 0])
-            else:
-                self.canvas.plot_heatmap_3d(self.data[time_step])
-        
-        self.log(f"Updated visualization: {vis_type}, Time: {time_step}")
-    
-    def update_statistics(self):
-        """更新统计信息"""
-        if self.data is None or not self.check_show_stats.isChecked():
-            return
-        
-        time_step = self.slider_time.value()
-        if len(self.data.shape) == 3:
-            current_data = self.data[time_step, :, 0]
-        else:
-            current_data = self.data[time_step]
-        
-        stats_text = f"""
+
 Time Step: {time_step}
 Nodes: {len(current_data)}
 Mean: {current_data.mean():.2f}
