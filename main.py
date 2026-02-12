@@ -7,8 +7,6 @@ import random
 import swanlab
 import torch
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from torch.nn.parallel import DataParallel
 
 from basicts.utils import load_adj, load_pkl
 from data import PretrainingDataset, ForecastingDataset
@@ -49,7 +47,7 @@ def evaluate(data_loader, model, config, scaler, mode="val"):
             labels.append(future_data.detach().cpu())
     preds = torch.cat(preds, dim=0)
     labels = torch.cat(labels, dim=0)
-    preds = SCALER_REGISTRY.get(scaler["func"])(preds, **scaler["args"])
+    pred1s = SCALER_REGISTRY.get(scaler["func"])(preds, **scaler["args"])
     labels = SCALER_REGISTRY.get(scaler["func"])(labels, **scaler["args"])
     results = {name: metric_forward(func, [preds, labels]).item() for name, func in metrics.items()}
     print(f"Evaluate {mode} data: " + ", ".join([f"{k}: {v:.4f}" for k, v in results.items()]))
@@ -132,7 +130,7 @@ def pretrain(config, args):
         num_workers=16,
         shuffle=True
     )
-    model = pretrain_model(
+    model = pretrain1_model(
         config['num_nodes'], config['dim'], config['topK'], config['adaptive'],
         config['pretrain_epochs'], config['patch_size'], config['in_channel'],
         config['embed_dim'], config['num_heads'], config['mlp_ratio'],
@@ -157,11 +155,9 @@ def pretrain(config, args):
             reconstruction_masked_tokens = outputs['reconstruction']
             label_masked_tokens = outputs['labels']
             sparsity_loss = outputs['sparsity_loss']
-            main_loss = metric_forward(lossType, [reconstruction_masked_tokens, label_masked_tokens])
             loss = main_loss + sparsity_loss
             optimizer.zero_grad()
             loss.backward()
-            optimizer.step()
             total_loss += loss.item()
         avg_loss = total_loss / len(train_loader)
         print(f"preTrain loss: {avg_loss:.4f}")
